@@ -14,38 +14,46 @@ def test_create_task():
     response_json = response.json()
     assert "message" in response_json
     assert "id" in response_json
+    tasks.append(response_json["id"])
 
 def test_get_tasks():
-    new_task_data = {
-        "title": "nova tarefa2",
-        "description": "Descrição2"
-    }
-    requests.post(f"{BASE_URL}/tasks", json=new_task_data)
     response = requests.get(f"{BASE_URL}/tasks")
     assert response.status_code == 200
     response_json = response.json()
-    assert len(response_json) == 2
+    assert "tasks" in response_json
+    assert "total_tasks" in response_json
 
 def test_get_task():
-    response = requests.get(f"{BASE_URL}/tasks/1")
+    if tasks:
+        task_id = tasks[0]
+        response = requests.get(f"{BASE_URL}/tasks/{task_id}")
     assert response.status_code == 200
     response_json = response.json()
-    assert response_json['title'] == "nova tarefa"
+    assert response_json['id'] == task_id
 
 def test_update_task():
-    new_task_data = {
-        "title": "Nome Alterado",
-        "description": "Descrição2"
-    }
-    put_response = requests.put(f"{BASE_URL}/tasks/1", json=new_task_data)
-    assert put_response.status_code == 200
+    if tasks:
+        task_id = tasks[0]
+        payload = {
+            "completed": True,
+            "description": "Nova descrição",
+            "title": "titulo atualizado"
+        }
+        response = requests.put(f"{BASE_URL}/tasks/{task_id}", json=payload)
+        assert response.status_code == 200
+        assert  "message"  in response.json()
+
     get_response = requests.get(f"{BASE_URL}/tasks/1")
     response_json = get_response.json()
-    assert response_json['title'] == "Nome Alterado"
+    assert response_json['title'] == payload["title"]
+    assert response_json['description'] == payload["description"]
+    assert response_json['completed'] == payload["completed"]
 
 def test_delete_task():
-    delete_response = requests.delete(f"{BASE_URL}/tasks/2")
-    assert delete_response.status_code == 200
-    get_response = requests.get(f"{BASE_URL}/tasks")
-    response_json = get_response.json()
-    assert response_json["total_tasks"] == 1
+    if tasks:
+        task_id = tasks[0]
+        response = requests.delete(f"{BASE_URL}/tasks/{task_id}")
+        assert response.status_code == 200
+
+    get_response = requests.get(f"{BASE_URL}/tasks/{task_id}")
+    assert get_response.status_code == 404
